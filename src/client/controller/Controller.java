@@ -15,6 +15,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import static com.sun.glass.ui.Cursor.setVisible;
 import static com.sun.java.accessibility.util.AWTEventMonitor.addKeyListener;
@@ -24,7 +27,7 @@ public class Controller extends JFrame {
     private static final double CELL_WIDTH = 64;
     private static final double CELL_HEIGHT = 64;
     private String _failoVardas = "map.txt";
-    private static final boolean isRunning = true;
+    private boolean isRunning = true;
     private static final int fps = 60;
     private int[][] map = new int[10][10];
     private static final int windowWidth = 1200;
@@ -34,10 +37,8 @@ public class Controller extends JFrame {
 
     public Pane mapContainer;
 
-// drawMap vienas veikia. Run vienas paleidzia ne ta app kuri reikia
     @FXML
     public void initialize() {
-
         drawMap();
         run();
     }
@@ -75,6 +76,37 @@ public class Controller extends JFrame {
         }
     }
 
+    public void doTimer() {
+        long time = System.currentTimeMillis();
+        update();
+        draw();
+        time = (1000/fps) - (System.currentTimeMillis()-time);
+        if (time>0) {
+            try {
+                Thread.sleep(time);
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
+    private void run() {
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        addKeyListener(new AL());
+        showData(map);
+        setFocusable(true);
+        setFocusTraversalKeysEnabled(false);
+        //setVisible(true);
+        java.util.Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+
+            @Override
+            public void run() {
+                doTimer();
+            }
+        }, 0, 1000/60);
+    }
+
     public class AL extends KeyAdapter {
         public void keyPressed(KeyEvent e) {
             switch (e.getKeyCode()) {
@@ -90,30 +122,11 @@ public class Controller extends JFrame {
                 case KeyEvent.VK_RIGHT:
                     positionX += 20;
                     break;
+                case KeyEvent.VK_P:
+                    isRunning = false;
+                    break;
             }
         }
-    }
-
-    private void run() {
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        addKeyListener(new AL());
-        showData(map);
-        setFocusable(true);
-        setFocusTraversalKeysEnabled(false);
-        setVisible(true);
-        while (isRunning) {
-            long time = System.currentTimeMillis();
-            //update();
-            //draw();
-            time = (1000 / fps) - (System.currentTimeMillis() - time);
-            if (time > 0) {
-                try {
-                    Thread.sleep(time);
-                } catch (Exception e) {
-                }
-            }
-        }
-        //setVisible(false);
     }
 
     void update() {
@@ -124,7 +137,7 @@ public class Controller extends JFrame {
         Graphics g = getGraphics(); // map graphics
         Graphics pg = getGraphics(); // player graphics
 
-        g.fillRect(0,0,1000,1000);
+        //g.fillRect(0,0,1000,1000);
 
         BufferedImage bomber;
         try {
